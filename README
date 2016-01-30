@@ -1,0 +1,10 @@
+目标是做一个简单的 JSON 对象映射工具
+大部分代码来自于 https://github.com/stleary/JSON-java
+
+修改部分
+修改了JsonObject 添加  JsonArray 对象的处理 
+修改了JsonObject 添加 Object 的逻辑
+移出了 HTTP 部分的功能
+
+
+这是一个 ECLIPSE 的项目

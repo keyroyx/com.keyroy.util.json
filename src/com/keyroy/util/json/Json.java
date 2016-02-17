@@ -115,7 +115,7 @@ public class Json {
 							if (ReflectTools.isBaseType(object.getClass())) { // 基础类型
 								jsonArray.put(object);
 							} else { // 对象类型
-								JSONObject childJsonObject = encode(object, null);
+								JSONObject childJsonObject = encode(object, template);
 								if (template != null && template.equals(object.getClass()) == false) {
 									childJsonObject.append(CLASS_KEY, object.getClass().getName());
 								}
@@ -160,6 +160,15 @@ public class Json {
 								jsonObject.append(fieldName, childJsonObject);
 							} else if (field.getType().equals(clazz) == false) { // 对象类型
 								JSONObject childJsonObject = encode(value, null);
+								// 查看对象 和 声明类型是否相同
+								Class<?> valueClass = value.getClass();
+								if (valueClass.equals(template)) { // 数据类型和模板类型相同
+
+								} else if (value.getClass().equals(field.getType())) {// 数据类型和声明类型相同
+
+								} else {
+									childJsonObject.append(CLASS_KEY, value.getClass().getName());
+								}
 								jsonObject.append(fieldName, childJsonObject);
 							}
 						}
@@ -262,7 +271,13 @@ public class Json {
 					}
 				} else if (value instanceof JSONObject) { // 对象类型
 					JSONObject jsonObject = (JSONObject) value;
-					Object object = decode(field.getType(), jsonObject);
+					Object object = null;
+					if (jsonObject.has(CLASS_KEY)) {
+						Class<?> elementClass = Class.forName(jsonObject.getString(CLASS_KEY));
+						object = decode(elementClass, jsonObject);
+					} else {
+						object = decode(field.getType(), jsonObject);
+					}
 					field.set(t, object);
 				}
 			}

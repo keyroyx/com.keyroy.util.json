@@ -31,6 +31,7 @@ public class Json {
 	public Json(InputStream inputStream) {
 		try {
 			this.source = new JSONObject(new JSONTokener(inputStream));
+			inputStream.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -39,6 +40,7 @@ public class Json {
 	public Json(InputStream inputStream, Charset charset) {
 		try {
 			this.source = new JSONObject(new JSONTokener(inputStream, charset));
+			inputStream.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

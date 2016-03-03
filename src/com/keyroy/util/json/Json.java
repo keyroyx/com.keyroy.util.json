@@ -182,8 +182,12 @@ public class Json {
 		return null;
 	}
 
+	public static final void fill(Object t, InputStream inputStream) throws Exception {
+		fill(t, new JSONObject(new JSONTokener(inputStream)));
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static final void fill(Object t, JSONObject source) throws Exception {
+	private static final void fill(Object t, JSONObject source) throws Exception {
 		if (t instanceof Class<?>) {
 			throw new IllegalArgumentException("object can not been Class");
 		} else {
@@ -287,6 +291,7 @@ public class Json {
 				}
 			}
 		}
+
 	}
 
 	private static final <T> T decode(Class<T> clazz, JSONObject source) throws Exception {

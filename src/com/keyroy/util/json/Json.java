@@ -183,107 +183,115 @@ public class Json {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static final <T> T decode(Class<T> clazz, JSONObject source) throws Exception {
-		T t = clazz.newInstance();
-		List<Field> fields = ReflectTools.getFields(clazz);
-		for (Field field : fields) {
-			String fieldName = getFieldName(field);
-			if (source.has(fieldName)) {
-				Object value = source.get(fieldName);
-				if (ReflectTools.isBaseType(field.getType()) && ReflectTools.isBaseType(value.getClass())) { // 基础类型
-					if (value.getClass().equals(field.getType())) { // 基本类型匹配
-						field.set(t, value);
-					} else {
-						field.set(t, ReflectTools.parser(String.valueOf(value), field.getType()));
-					}
-				} else if (ReflectTools.isArray(field) && value instanceof JSONArray) { // 数组
-					Class<?> arrayClass = ReflectTools.getTemplate(field);
-					JSONArray jsonArray = (JSONArray) value;
-					Object array = Array.newInstance(arrayClass, jsonArray.length());
-					field.set(t, array);
-					if (ReflectTools.isBaseType(arrayClass)) { // 基础类型数组
-						for (int i = 0; i < jsonArray.length(); i++) {
-							Array.set(array, i, jsonArray.get(i));
+	public static final void fill(Object t, JSONObject source) throws Exception {
+		if (t instanceof Class<?>) {
+			throw new IllegalArgumentException("object can not been Class");
+		} else {
+			List<Field> fields = ReflectTools.getFields(t.getClass());
+			for (Field field : fields) {
+				String fieldName = getFieldName(field);
+				if (source.has(fieldName)) {
+					Object value = source.get(fieldName);
+					if (ReflectTools.isBaseType(field.getType()) && ReflectTools.isBaseType(value.getClass())) { // 基础类型
+						if (value.getClass().equals(field.getType())) { // 基本类型匹配
+							field.set(t, value);
+						} else {
+							field.set(t, ReflectTools.parser(String.valueOf(value), field.getType()));
 						}
-					} else { // 对象类型数组
-						for (int i = 0; i < jsonArray.length(); i++) {
-							Object jsonElement = jsonArray.get(i);
-							if (jsonElement instanceof JSONObject) {
-								Object element = decode(arrayClass, (JSONObject) jsonElement);
-								Array.set(array, i, element);
+					} else if (ReflectTools.isArray(field) && value instanceof JSONArray) { // 数组
+						Class<?> arrayClass = ReflectTools.getTemplate(field);
+						JSONArray jsonArray = (JSONArray) value;
+						Object array = Array.newInstance(arrayClass, jsonArray.length());
+						field.set(t, array);
+						if (ReflectTools.isBaseType(arrayClass)) { // 基础类型数组
+							for (int i = 0; i < jsonArray.length(); i++) {
+								Array.set(array, i, jsonArray.get(i));
 							}
-						}
-					}
-
-				} else if (ReflectTools.isSubClass(field, List.class) && value instanceof JSONArray) { // 列表
-					JSONArray jsonArray = (JSONArray) value;
-					Class<?> arrayClass = ReflectTools.getTemplate(field);
-					List list = null;
-					if (field.getType().equals(List.class)) {
-						list = new ArrayList<Object>(jsonArray.length());
-					} else {
-						list = (List) field.getType().newInstance();
-					}
-					field.set(t, list);
-					if (ReflectTools.isBaseType(arrayClass)) { // 基础类型数组
-						for (int i = 0; i < jsonArray.length(); i++) {
-							list.add(jsonArray.get(i));
-						}
-					} else { // 对象类型数组
-						for (int i = 0; i < jsonArray.length(); i++) {
-							Object jsonElement = jsonArray.get(i);
-							if (jsonElement instanceof JSONObject) {
-								JSONObject jsonObject = (JSONObject) jsonElement;
-								if (jsonObject.has(CLASS_KEY)) {
-									Class<?> elementClass = Class.forName(jsonObject.getString(CLASS_KEY));
-									list.add(decode(elementClass, jsonObject));
-								} else {
-									list.add(decode(arrayClass, jsonObject));
+						} else { // 对象类型数组
+							for (int i = 0; i < jsonArray.length(); i++) {
+								Object jsonElement = jsonArray.get(i);
+								if (jsonElement instanceof JSONObject) {
+									Object element = decode(arrayClass, (JSONObject) jsonElement);
+									Array.set(array, i, element);
 								}
 							}
 						}
-					}
-				} else if (ReflectTools.isSubClass(field, Map.class) && value instanceof JSONObject) {// 对应表
-					JSONObject jsonObject = (JSONObject) value;
-					Class<?>[] classes = ReflectTools.getTemplates(field);
 
-					Class<?> keyClass = classes[0];
-					Class<?> valClass = classes[1];
+					} else if (ReflectTools.isSubClass(field, List.class) && value instanceof JSONArray) { // 列表
+						JSONArray jsonArray = (JSONArray) value;
+						Class<?> arrayClass = ReflectTools.getTemplate(field);
+						List list = null;
+						if (field.getType().equals(List.class)) {
+							list = new ArrayList<Object>(jsonArray.length());
+						} else {
+							list = (List) field.getType().newInstance();
+						}
+						field.set(t, list);
+						if (ReflectTools.isBaseType(arrayClass)) { // 基础类型数组
+							for (int i = 0; i < jsonArray.length(); i++) {
+								list.add(jsonArray.get(i));
+							}
+						} else { // 对象类型数组
+							for (int i = 0; i < jsonArray.length(); i++) {
+								Object jsonElement = jsonArray.get(i);
+								if (jsonElement instanceof JSONObject) {
+									JSONObject jsonObject = (JSONObject) jsonElement;
+									if (jsonObject.has(CLASS_KEY)) {
+										Class<?> elementClass = Class.forName(jsonObject.getString(CLASS_KEY));
+										list.add(decode(elementClass, jsonObject));
+									} else {
+										list.add(decode(arrayClass, jsonObject));
+									}
+								}
+							}
+						}
+					} else if (ReflectTools.isSubClass(field, Map.class) && value instanceof JSONObject) {// 对应表
+						JSONObject jsonObject = (JSONObject) value;
+						Class<?>[] classes = ReflectTools.getTemplates(field);
 
-					Map map = null;
-					if (field.getType().equals(Map.class)) {
-						map = new HashMap(jsonObject.length());
-					} else {
-						map = (Map) field.getType().newInstance();
-					}
-					field.set(t, map);
-					String[] keies = JSONObject.getNames(jsonObject);
-					for (String key : keies) {
-						Object mapKey = key;
-						Object mapValue = jsonObject.get(key);
-						if (keyClass != null) {
-							mapKey = ReflectTools.parser(key, keyClass);
+						Class<?> keyClass = classes[0];
+						Class<?> valClass = classes[1];
+
+						Map map = null;
+						if (field.getType().equals(Map.class)) {
+							map = new HashMap(jsonObject.length());
+						} else {
+							map = (Map) field.getType().newInstance();
 						}
-						if (mapValue != null && ReflectTools.isBaseType(mapValue.getClass())) {
-							map.put(mapKey, mapValue);
-						} else if (mapValue instanceof JSONObject && valClass != null) {
-							Object object = decode(valClass, (JSONObject) mapValue);
-							map.put(mapKey, object);
+						field.set(t, map);
+						String[] keies = JSONObject.getNames(jsonObject);
+						for (String key : keies) {
+							Object mapKey = key;
+							Object mapValue = jsonObject.get(key);
+							if (keyClass != null) {
+								mapKey = ReflectTools.parser(key, keyClass);
+							}
+							if (mapValue != null && ReflectTools.isBaseType(mapValue.getClass())) {
+								map.put(mapKey, mapValue);
+							} else if (mapValue instanceof JSONObject && valClass != null) {
+								Object object = decode(valClass, (JSONObject) mapValue);
+								map.put(mapKey, object);
+							}
 						}
+					} else if (value instanceof JSONObject) { // 对象类型
+						JSONObject jsonObject = (JSONObject) value;
+						Object object = null;
+						if (jsonObject.has(CLASS_KEY)) {
+							Class<?> elementClass = Class.forName(jsonObject.getString(CLASS_KEY));
+							object = decode(elementClass, jsonObject);
+						} else {
+							object = decode(field.getType(), jsonObject);
+						}
+						field.set(t, object);
 					}
-				} else if (value instanceof JSONObject) { // 对象类型
-					JSONObject jsonObject = (JSONObject) value;
-					Object object = null;
-					if (jsonObject.has(CLASS_KEY)) {
-						Class<?> elementClass = Class.forName(jsonObject.getString(CLASS_KEY));
-						object = decode(elementClass, jsonObject);
-					} else {
-						object = decode(field.getType(), jsonObject);
-					}
-					field.set(t, object);
 				}
 			}
 		}
+	}
+
+	private static final <T> T decode(Class<T> clazz, JSONObject source) throws Exception {
+		T t = clazz.newInstance();
+		fill(t, source);
 		return t;
 	}
 

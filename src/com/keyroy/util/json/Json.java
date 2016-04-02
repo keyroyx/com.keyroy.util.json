@@ -28,6 +28,10 @@ public class Json {
 		source = new JSONObject(string);
 	}
 
+	public Json(JSONObject source) {
+		this.source = source;
+	}
+
 	public Json(InputStream inputStream) {
 		try {
 			this.source = new JSONObject(new JSONTokener(inputStream));
@@ -78,12 +82,14 @@ public class Json {
 	@SuppressWarnings("rawtypes")
 	/***
 	 * 初始化对象到 JSONObject
-	 * @param source 目标对象
+	 * 
+	 * @param source
+	 *            目标对象
 	 * @param template
 	 * @return
 	 * @throws Exception
 	 */
-	private static final JSONObject encode(Object source, Class<?> template) throws Exception {
+	public static final JSONObject encode(Object source, Class<?> template) throws Exception {
 		if (source != null) {
 			if (source instanceof JSONObject) {
 				return (JSONObject) source;
@@ -187,7 +193,7 @@ public class Json {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static final void fill(Object t, JSONObject source) throws Exception {
+	public static final void fill(Object t, JSONObject source) throws Exception {
 		if (t instanceof Class<?>) {
 			throw new IllegalArgumentException("object can not been Class");
 		} else {
@@ -294,7 +300,7 @@ public class Json {
 
 	}
 
-	private static final <T> T decode(Class<T> clazz, JSONObject source) throws Exception {
+	public static final <T> T decode(Class<T> clazz, JSONObject source) throws Exception {
 		T t = clazz.newInstance();
 		fill(t, source);
 		return t;

@@ -96,7 +96,7 @@ public class Json {
 			} else {
 				JSONObject jsonObject = null;
 				Class<?> clazz = ReflectTools.getClass(source);
-				if (ReflectTools.isBaseType(clazz) && ReflectTools.isDefaultValue(source) == false) {// 常量
+				if (ReflectTools.isBaseType(clazz)) {// 常量
 					jsonObject = new JSONObject();
 					jsonObject.append(clazz.getSimpleName(), String.valueOf(source));
 				} else if (ReflectTools.isArray(source)) { // 数组
@@ -157,7 +157,9 @@ public class Json {
 						String fieldName = getFieldName(field);
 						if (value != null) {
 							if (ReflectTools.isBaseType(value.getClass())) { // 基础类型
-								if (ReflectTools.isDefaultValue(value)) {
+								JsonAn jsonAn = field.getAnnotation(JsonAn.class);
+								if (ReflectTools.isDefaultValue(value)
+										&& (jsonAn == null || jsonAn.showDefault() == false)) {
 									// 默认值
 								} else {
 									jsonObject.append(fieldName, value);

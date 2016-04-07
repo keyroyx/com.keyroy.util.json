@@ -17,4 +17,6 @@ public @interface JsonAn {
 
 	public boolean skip() default false;
 
+	public boolean showDefault() default false;
+
 }

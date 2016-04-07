@@ -265,11 +265,20 @@ public class Json {
 						Class<?> valClass = classes[1];
 
 						Map map = null;
-						if (field.getType().equals(Map.class)) {
-							map = new HashMap(jsonObject.length());
-						} else {
-							map = (Map) field.getType().newInstance();
+						try {
+							String classPath = (String) jsonObject.remove(CLASS_KEY);
+							map = (Map) Class.forName(classPath).newInstance();
+						} catch (Exception e) {
 						}
+
+						if (map == null) {
+							if (field.getType().equals(Map.class)) {
+								map = new HashMap(jsonObject.length());
+							} else {
+								map = (Map) field.getType().newInstance();
+							}
+						}
+
 						field.set(t, map);
 						String[] keies = JSONObject.getNames(jsonObject);
 						for (String key : keies) {

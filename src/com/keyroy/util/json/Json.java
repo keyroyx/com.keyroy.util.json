@@ -24,8 +24,12 @@ public class Json {
 		source = new JSONObject();
 	}
 
-	public Json(String string) {
-		source = new JSONObject(string);
+	public Json(String json) {
+		if (json.startsWith("[")) {
+			source = new JSONArray(json);
+		} else {
+			source = new JSONObject(json);
+		}
 	}
 
 	public Json(JSONObject source) {
@@ -56,6 +60,29 @@ public class Json {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public final <T> List<T> toList(Class<T> clazz) throws Exception {
+		return toList(clazz, new ArrayList<T>());
+	}
+
+	@SuppressWarnings("unchecked")
+	public final <T> List<T> toList(Class<T> clazz, List<T> list) throws Exception {
+		if (source != null && source instanceof JSONArray) {
+			JSONArray jsonArray = (JSONArray) source;
+			for (int i = 0; i < jsonArray.length(); i++) {
+				if (ReflectTools.isBaseType(clazz)) {
+					Object object = jsonArray.get(i);
+					list.add((T) object);
+				} else {
+					JSONObject jsonObject = jsonArray.getJSONObject(i);
+					T t = decode(clazz, jsonObject);
+					list.add(t);
+				}
+			}
+			return list;
+		}
+		return null;
 	}
 
 	public final <T> T toObject(Class<T> clazz) throws Exception {
